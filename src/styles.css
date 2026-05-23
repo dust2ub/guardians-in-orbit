@@ -1,0 +1,233 @@
+:root {
+  color-scheme: dark;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #030711;
+  color: #f4f7ff;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-width: 320px;
+  overflow: hidden;
+}
+
+button, input { font: inherit; }
+
+.screen {
+  min-height: 100svh;
+  position: relative;
+  overflow: hidden;
+}
+
+.intro {
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 50% 20%, rgba(102, 145, 255, 0.25), transparent 34%),
+    linear-gradient(180deg, rgba(3, 7, 17, 0.55), rgba(3, 7, 17, 0.94)),
+    url('/assets/earth.jpg') center / cover;
+}
+
+.intro-card {
+  width: min(560px, 100%);
+  padding: clamp(24px, 5vw, 44px);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 28px;
+  background: rgba(4, 9, 23, 0.66);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+  text-align: center;
+}
+
+.eyebrow {
+  margin: 0 0 10px;
+  color: #aebdfd;
+  font-size: 0.76rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(1.5rem, 5vw, 2.5rem);
+  line-height: 0.95;
+  letter-spacing: -0.06em;
+}
+
+.subtitle {
+  margin: 20px auto 28px;
+  max-width: 36rem;
+  color: rgba(244, 247, 255, 0.78);
+  line-height: 1.6;
+}
+
+.upload-box {
+  display: block;
+  margin: 0 auto 14px;
+  padding: 18px;
+  border: 1px dashed rgba(255, 255, 255, 0.34);
+  border-radius: 18px;
+  color: rgba(244, 247, 255, 0.82);
+  cursor: pointer;
+}
+
+.upload-box input { display: none; }
+
+.primary, .ghost {
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.primary {
+  width: 100%;
+  padding: 15px 22px;
+  color: #07101f;
+  background: #f4f7ff;
+  font-weight: 800;
+}
+
+.primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.ghost {
+  padding: 10px 14px;
+  color: #f4f7ff;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.small-note, .disclaimer, .orbit-footer {
+  color: rgba(244, 247, 255, 0.58);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.disclaimer {
+  margin-top: 28px;
+}
+
+.orbit {
+  background:
+    linear-gradient(180deg, rgba(3, 7, 17, 0.16), rgba(3, 7, 17, 0.42)),
+    url('/assets/earth.jpg') center / cover;
+}
+
+.stars {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle, rgba(255,255,255,0.85) 0 1px, transparent 1.5px),
+    radial-gradient(circle, rgba(174,189,253,0.65) 0 1px, transparent 1.5px);
+  background-size: 140px 140px, 220px 220px;
+  opacity: 0.35;
+  animation: starDrift 80s linear infinite;
+}
+
+.vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 45%, transparent 0 35%, rgba(0, 0, 0, 0.58) 100%);
+  pointer-events: none;
+}
+
+.hud {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: clamp(18px, 4vw, 42px);
+}
+
+.hud h1 {
+  font-size: clamp(1.65rem, 5vw, 3.6rem);
+}
+
+.ship-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.ship {
+  position: absolute;
+  width: clamp(110px, 18vw, 260px);
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 18px 28px rgba(0, 0, 0, 0.62));
+  user-select: none;
+}
+
+.my-ship {
+  left: 50%;
+  top: 52%;
+  transform: translate(-50%, -50%);
+  animation: enterOrbit 3.4s cubic-bezier(.18,.89,.26,1.02) both, idleFloat 7s ease-in-out 3.4s infinite;
+}
+
+.other-ship {
+  width: clamp(70px, 10vw, 150px);
+  opacity: 0.74;
+  animation: otherEnter 4s ease-out both, idleFloat 8s ease-in-out 4s infinite;
+}
+
+.ship-0 { left: 12%; top: 32%; }
+.ship-1 { left: 70%; top: 28%; }
+.ship-2 { left: 18%; top: 66%; }
+.ship-3 { left: 78%; top: 62%; }
+.ship-4 { left: 43%; top: 18%; }
+.ship-5 { left: 49%; top: 74%; }
+
+.orbit-footer {
+  position: absolute;
+  z-index: 5;
+  left: clamp(18px, 4vw, 42px);
+  right: clamp(18px, 4vw, 42px);
+  bottom: 18px;
+}
+
+@keyframes enterOrbit {
+  from { transform: translate(-85vw, 12vh) scale(0.82) rotate(2deg); opacity: 0; }
+  to { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; }
+}
+
+@keyframes otherEnter {
+  from { transform: translateX(40vw) scale(0.86); opacity: 0; }
+  to { transform: translateX(0) scale(1); opacity: 0.74; }
+}
+
+@keyframes idleFloat {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 -14px; }
+}
+
+@keyframes starDrift {
+  from { background-position: 0 0, 0 0; }
+  to { background-position: 600px 300px, -400px 500px; }
+}
+
+@media (max-width: 720px) {
+  .hud {
+    flex-direction: column;
+  }
+
+  .ship {
+    width: clamp(120px, 40vw, 190px);
+  }
+
+  .other-ship {
+    width: clamp(62px, 22vw, 108px);
+  }
+
+  .ship-3, .ship-4, .ship-5 {
+    display: none;
+  }
+}
