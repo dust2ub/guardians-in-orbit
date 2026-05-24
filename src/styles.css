@@ -680,7 +680,7 @@ h1 {
 
 @keyframes enterOrbit {
   from { transform: translate(85vw, 12vh) scale(0.82) rotate(2deg); opacity: 0; }
-  to   { transform: translate(-50%, -10%) scale(1) rotate(0deg); opacity: 1; }
+  to   { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; }
 }
 
 @keyframes otherEnter {
