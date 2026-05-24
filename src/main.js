@@ -8,12 +8,12 @@ const MAX_VISIBLE_SHIPS = 5
 const MOBILE_VISIBLE_SHIPS = 2
 
 const SHIP_VARIANTS = [
-  '/assets/ship.png',
-  '/assets/ship.png',
-  '/assets/ship.png',
-  '/assets/ship.png',
-  '/assets/ship.png',
-  '/assets/ship.png'
+  '/assets/ship2.png',
+  '/assets/ship3.png',
+  '/assets/ship4.png',
+  '/assets/ship5.png',
+  '/assets/ship6.png',
+  '/assets/ship1.png'
 ]
 
 const CLASSES = ['Hunter', 'Titan', 'Warlock']
@@ -24,7 +24,6 @@ const CLASS_COLORS = {
   Warlock: 'rgba(210, 158,  38, 0.9)',
 }
 
-// SVG icons — exact artwork from the design assets
 const CLASS_SVG = {
   Hunter: `<svg viewBox="0 0 250 250" xmlns="http://www.w3.org/2000/svg" fill="none">
     <path d="m88.13,97.25l35.17,0l-35.17,52.2502l35.18,0l-38.12,56.635l-35.185,0l35.17,-52.25l-35.175,0l35.165,-52.2502l-35.165,0l38.115,-56.635l35.185,0l-35.17,52.25z" fill="currentColor"/>
@@ -468,15 +467,33 @@ function drawShips() {
 
   const myShip = state.uploadedShipUrl || SHIP_VARIANTS[state.shipVariant]
 
+  // Indices available for other ships — excludes my own variant
+  const availableVariants = SHIP_VARIANTS
+    .map((_, i) => i)
+    .filter(i => i !== state.shipVariant)
+
+  // Track assigned indices to avoid same ship appearing twice on screen
+  const assigned = new Set([state.shipVariant])
+
   layer.innerHTML = `
     <img class="ship my-ship" src="${myShip}" alt="Your jumpship" />
     ${others.map((guardian, index) => {
-      const variant = guardian.shipVariant ?? index
-      const delay   = Math.round((guardian.seed ?? Math.random()) * 6000)
+      // Try to use the guardian's own declared variant
+      let variant = (guardian.shipVariant ?? index) % SHIP_VARIANTS.length
+
+      // If it's already on screen, pick the next available one
+      if (assigned.has(variant)) {
+        const fallback = availableVariants.find(v => !assigned.has(v))
+        if (fallback !== undefined) variant = fallback
+      }
+
+      assigned.add(variant)
+      const delay = Math.round((guardian.seed ?? Math.random()) * 6000)
+
       return `
         <img
           class="ship other-ship ship-${index}"
-          src="${SHIP_VARIANTS[variant % SHIP_VARIANTS.length]}"
+          src="${SHIP_VARIANTS[variant]}"
           alt="Another Guardian's jumpship"
           style="animation-delay: ${delay}ms"
         />
