@@ -21,6 +21,8 @@ button, input { font: inherit; }
   overflow: hidden;
 }
 
+/* ── Intro ─────────────────────────────────────────────────── */
+
 .intro {
   display: grid;
   place-items: center;
@@ -102,6 +104,10 @@ h1 {
   border: 1px solid rgba(255, 255, 255, 0.16);
 }
 
+.ghost:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
 .small-note, .disclaimer, .orbit-footer {
   color: rgba(244, 247, 255, 0.58);
   font-size: 0.78rem;
@@ -111,6 +117,8 @@ h1 {
 .disclaimer {
   margin-top: 28px;
 }
+
+/* ── Orbit ─────────────────────────────────────────────────── */
 
 .orbit {
   background:
@@ -136,6 +144,8 @@ h1 {
   pointer-events: none;
 }
 
+/* ── HUD ───────────────────────────────────────────────────── */
+
 .hud {
   position: relative;
   z-index: 5;
@@ -149,6 +159,89 @@ h1 {
 .hud h1 {
   font-size: clamp(1.65rem, 5vw, 3.6rem);
 }
+
+.hud-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+/* Quest toggle button */
+
+.quest-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+}
+
+.quest-toggle-label {
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.quest-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: rgba(174, 189, 253, 0.25);
+  color: #aebdfd;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1;
+  transition: background 0.2s, color 0.2s;
+}
+
+.quest-badge.badge-done {
+  background: rgba(100, 220, 150, 0.25);
+  color: #70e0a0;
+}
+
+/* ── Clock ─────────────────────────────────────────────────── */
+
+.clock-block {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding-top: 8px;
+  pointer-events: none;
+}
+
+.clock-time {
+  font-size: clamp(3.5rem, 12vw, 7rem);
+  font-weight: 200;
+  letter-spacing: -0.05em;
+  line-height: 1;
+  color: #f0f4ff;
+  /* Subtle glow without drop-shadow */
+  text-shadow: 0 0 60px rgba(120, 160, 255, 0.2);
+}
+
+.clock-date {
+  margin-top: 8px;
+  font-size: 0.8rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(174, 189, 253, 0.7);
+}
+
+.clock-greeting {
+  margin-top: 6px;
+  font-size: 0.9rem;
+  font-style: italic;
+  color: rgba(244, 247, 255, 0.48);
+}
+
+/* ── Ships ─────────────────────────────────────────────────── */
 
 .ship-layer {
   position: absolute;
@@ -168,7 +261,7 @@ h1 {
 
 .my-ship {
   left: 50%;
-  top: 52%;
+  top: 58%;
   transform: translate(-50%, -50%);
   animation: enterOrbit 3.4s cubic-bezier(.18,.89,.26,1.02) both, idleFloat 7s ease-in-out 3.4s infinite;
 }
@@ -179,12 +272,252 @@ h1 {
   animation: otherEnter 4s ease-out both, idleFloat 8s ease-in-out 4s infinite;
 }
 
-.ship-0 { left: 12%; top: 32%; }
-.ship-1 { left: 70%; top: 28%; }
-.ship-2 { left: 18%; top: 66%; }
-.ship-3 { left: 78%; top: 62%; }
-.ship-4 { left: 43%; top: 18%; }
-.ship-5 { left: 49%; top: 74%; }
+.ship-0 { left: 12%; top: 38%; }
+.ship-1 { left: 70%; top: 34%; }
+.ship-2 { left: 18%; top: 68%; }
+.ship-3 { left: 78%; top: 64%; }
+.ship-4 { left: 43%; top: 22%; }
+.ship-5 { left: 49%; top: 76%; }
+
+/* ── Quest Panel ───────────────────────────────────────────── */
+
+.quest-panel {
+  position: fixed;
+  z-index: 20;
+  bottom: 48px;
+  right: 32px;
+  width: 320px;
+  background: rgba(4, 10, 28, 0.82);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  padding: 18px 20px 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+
+  /* Hidden state */
+  opacity: 0;
+  transform: translateY(12px) scale(0.97);
+  pointer-events: none;
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+.quest-panel.open {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.quest-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.quest-panel-title {
+  font-size: 0.72rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #aebdfd;
+  font-weight: 600;
+}
+
+.quest-panel-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.quest-count-text {
+  font-size: 0.72rem;
+  color: rgba(174, 189, 253, 0.5);
+}
+
+.quest-close-btn {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 0.78rem;
+  cursor: pointer;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+}
+
+.quest-close-btn:hover {
+  color: rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Progress bar */
+
+.quest-progress-bar {
+  height: 2px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+
+.quest-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, rgba(100, 140, 255, 0.7), rgba(174, 189, 253, 0.9));
+  border-radius: 999px;
+  transition: width 0.4s cubic-bezier(.4,0,.2,1);
+  width: 0%;
+}
+
+/* Quest list */
+
+.quest-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 240px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.1) transparent;
+}
+
+.quest-list::-webkit-scrollbar { width: 4px; }
+.quest-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+.quest-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 6px;
+  border-radius: 10px;
+  transition: background 0.14s;
+}
+
+.quest-item:hover { background: rgba(255, 255, 255, 0.05); }
+
+/* Check button */
+
+.quest-check {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(174, 189, 253, 0.4);
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: transparent;
+  transition: border-color 0.18s, background 0.18s, color 0.18s;
+  padding: 0;
+}
+
+.quest-check:hover {
+  border-color: rgba(174, 189, 253, 0.8);
+  background: rgba(174, 189, 253, 0.1);
+}
+
+.quest-item.done .quest-check {
+  border-color: rgba(100, 160, 255, 0.7);
+  background: rgba(100, 160, 255, 0.2);
+  color: #aebdfd;
+}
+
+/* Quest text */
+
+.quest-text {
+  flex: 1;
+  font-size: 0.88rem;
+  color: rgba(244, 247, 255, 0.85);
+  line-height: 1.4;
+  transition: color 0.2s;
+  word-break: break-word;
+}
+
+.quest-item.done .quest-text {
+  color: rgba(174, 189, 253, 0.35);
+  text-decoration: line-through;
+  text-decoration-color: rgba(174, 189, 253, 0.25);
+}
+
+/* Delete button */
+
+.quest-del {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.18);
+  font-size: 0.7rem;
+  cursor: pointer;
+  padding: 3px 5px;
+  border-radius: 4px;
+  line-height: 1;
+  opacity: 0;
+  transition: opacity 0.14s, color 0.14s, background 0.14s;
+}
+
+.quest-item:hover .quest-del { opacity: 1; }
+
+.quest-del:hover {
+  color: rgba(255, 100, 100, 0.8);
+  background: rgba(255, 100, 100, 0.1);
+}
+
+/* Add row */
+
+.quest-add-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.quest-input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 7px 10px;
+  font-size: 0.82rem;
+  color: rgba(244, 247, 255, 0.82);
+  outline: none;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.quest-input::placeholder {
+  color: rgba(174, 189, 253, 0.28);
+}
+
+.quest-input:focus {
+  border-color: rgba(174, 189, 253, 0.45);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.quest-add-btn {
+  flex-shrink: 0;
+  background: rgba(100, 140, 255, 0.18);
+  border: 1px solid rgba(100, 140, 255, 0.32);
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: 0.78rem;
+  color: #aebdfd;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.quest-add-btn:hover {
+  background: rgba(100, 140, 255, 0.28);
+  border-color: rgba(100, 140, 255, 0.5);
+}
+
+/* ── Footer ────────────────────────────────────────────────── */
 
 .orbit-footer {
   position: absolute;
@@ -192,31 +525,47 @@ h1 {
   left: clamp(18px, 4vw, 42px);
   right: clamp(18px, 4vw, 42px);
   bottom: 18px;
+  color: rgba(244, 247, 255, 0.38);
+  font-size: 0.72rem;
 }
+
+/* ── Animations ────────────────────────────────────────────── */
 
 @keyframes enterOrbit {
   from { transform: translate(-85vw, 12vh) scale(0.82) rotate(2deg); opacity: 0; }
-  to { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; }
+  to   { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; }
 }
 
 @keyframes otherEnter {
   from { transform: translateX(40vw) scale(0.86); opacity: 0; }
-  to { transform: translateX(0) scale(1); opacity: 0.74; }
+  to   { transform: translateX(0) scale(1); opacity: 0.74; }
 }
 
 @keyframes idleFloat {
   0%, 100% { translate: 0 0; }
-  50% { translate: 0 -14px; }
+  50%       { translate: 0 -14px; }
 }
 
 @keyframes starDrift {
   from { background-position: 0 0, 0 0; }
-  to { background-position: 600px 300px, -400px 500px; }
+  to   { background-position: 600px 300px, -400px 500px; }
 }
+
+/* ── Responsive ────────────────────────────────────────────── */
 
 @media (max-width: 720px) {
   .hud {
     flex-direction: column;
+  }
+
+  .hud-right {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .clock-time {
+    font-size: clamp(3rem, 18vw, 4.5rem);
   }
 
   .ship {
@@ -229,5 +578,15 @@ h1 {
 
   .ship-3, .ship-4, .ship-5 {
     display: none;
+  }
+
+  /* Quest panel docks to bottom-left on mobile */
+  .quest-panel {
+    right: auto;
+    left: 16px;
+    bottom: 56px;
+    width: calc(100vw - 32px);
+    max-width: 340px;
+    border-radius: 16px;
   }
 }
