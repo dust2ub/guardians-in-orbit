@@ -8,12 +8,12 @@ const MAX_VISIBLE_SHIPS = 5
 const MOBILE_VISIBLE_SHIPS = 2
 
 const SHIP_VARIANTS = [
-  '/assets/ship2.png',
-  '/assets/ship3.png',
-  '/assets/ship4.png',
-  '/assets/ship5.png',
-  '/assets/ship6.png',
-  '/assets/ship1.png'
+  '/assets/ship-1.png',
+  '/assets/ship-2.png',
+  '/assets/ship-3.png',
+  '/assets/ship-4.png',
+  '/assets/ship-5.png',
+  '/assets/ship-6.png'
 ]
 
 const CLASSES = ['Hunter', 'Titan', 'Warlock']
@@ -58,7 +58,9 @@ const state = {
   guardians: [],
   quests: loadQuests(),
   questPanelOpen: false,
-  clockInterval: null
+  clockInterval: null,
+  musicTrack: 'lullaby',  // 'lullaby' | 'orbit' | 'off'
+  d2Players: null
 }
 
 const app = document.querySelector('#app')
@@ -105,10 +107,23 @@ function renderIntro() {
           `).join('')}
         </div>
 
-        <label class="upload-box">
+        <div class="ship-guide">
+          <p class="ship-guide-text">
+            Find your ship on
+            <a href="https://www.light.gg/db/category/42/ships/" target="_blank" rel="noopener noreferrer">light.gg</a>
+            and download an image from the <strong>Screenshots</strong> tab.
+            Then remove the background using
+            <a href="https://www.remove.bg" target="_blank" rel="noopener noreferrer">remove.bg</a>
+            before uploading.
+          </p>
+        </div>
+
+        <label class="upload-box" id="upload-box">
           <input id="ship-upload" type="file" accept="image/*" />
           <span id="upload-label">Upload your jumpship image</span>
         </label>
+
+        <p id="upload-status" class="upload-status" aria-live="polite"></p>
 
         <button id="enter-button" class="primary" disabled>
           Choose a class to enter Orbit
@@ -152,9 +167,41 @@ function renderIntro() {
   input.addEventListener('change', () => {
     const file = input.files?.[0]
     if (!file) return
-    if (state.uploadedShipUrl) URL.revokeObjectURL(state.uploadedShipUrl)
+
+    const status = document.querySelector('#upload-status')
+    const box = document.querySelector('#upload-box')
+    const enterBtn = document.querySelector('#enter-button')
+
+    const MAX_FILE_SIZE = 8 * 1024 * 1024 // 8MB
+
+    status.classList.remove('status-ok', 'status-err')
+    box.classList.remove('processing')
+
+    if (state.uploadedShipUrl) {
+      URL.revokeObjectURL(state.uploadedShipUrl)
+      state.uploadedShipUrl = null
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      input.value = ''
+      label.textContent = 'Upload your jumpship image'
+      status.textContent = 'Image is too large. Please use an image under 8MB.'
+      status.classList.add('status-err')
+      return
+    }
+
     state.uploadedShipUrl = URL.createObjectURL(file)
     label.textContent = file.name
+    status.textContent = '✓ Uploaded'
+    status.classList.add('status-ok')
+
+    if (state.guardianClass) {
+      enterBtn.disabled = false
+      enterBtn.textContent = `Enter Orbit as ${state.guardianClass}`
+    } else {
+      enterBtn.disabled = true
+      enterBtn.textContent = 'Choose a class to enter Orbit'
+    }
   })
 
   document.querySelector('#enter-button').addEventListener('click', async () => {
@@ -181,7 +228,11 @@ function renderOrbit() {
         </div>
 
         <div class="hud-right">
-          <button id="sound-button" class="ghost">Sound: On</button>
+          <div class="sound-picker" role="group" aria-label="Music track">
+            <button class="sound-opt active" data-track="lullaby">Lullaby</button>
+            <button class="sound-opt" data-track="orbit">Orbit</button>
+            <button class="sound-opt" data-track="off">Off</button>
+          </div>
           <button
             id="quest-toggle"
             class="ghost quest-toggle-btn"
@@ -237,7 +288,7 @@ function renderOrbit() {
         </div>
       </aside>
 
-      <audio id="bgm" src="/assets/lullaby.mp3" loop preload="auto"></audio>
+      <audio id="bgm" loop preload="auto"></audio>
 
       <footer class="orbit-footer">
         <span>Unofficial fansite &mdash; Destiny 2 belongs to Bungie.</span>
@@ -245,12 +296,28 @@ function renderOrbit() {
     </main>
   `
 
-  document.querySelector('#sound-button').addEventListener('click', toggleMusic)
   document.querySelector('#quest-toggle').addEventListener('click', openQuestPanel)
   document.querySelector('#quest-close-btn').addEventListener('click', closeQuestPanel)
   document.querySelector('#quest-add-btn').addEventListener('click', addQuest)
-  document.querySelector('#quest-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter') addQuest()
+  document.querySelector('#quest-panel').addEventListener('click', e => {
+  e.stopPropagation()
+  })
+  const questInput = document.querySelector('#quest-input')
+
+  questInput.addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return
+
+    // Korean/Japanese/Chinese IME composition guard
+    if (e.isComposing || e.keyCode === 229) return
+
+    e.preventDefault()
+    addQuest()
+  })
+
+  document.querySelectorAll('.sound-opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      selectTrack(btn.dataset.track)
+    })
   })
 
   document.querySelector('.orbit').addEventListener('click', e => {
@@ -264,6 +331,7 @@ function renderOrbit() {
   startClock()
   renderQuestPanel()
   drawShips()
+  fetchD2Players()
 }
 
 // ─── Clock ────────────────────────────────────────────────────────────────────
@@ -318,12 +386,13 @@ function closeQuestPanel() {
 
 function addQuest() {
   const input = document.querySelector('#quest-input')
-  const val   = input.value.trim()
+  const val = input.value.trim()
   if (!val) return
   state.quests.push({ id: crypto.randomUUID(), text: val, done: false })
+  input.value = ''
+
   saveQuests()
   renderQuestPanel()
-  input.value = ''
   input.focus()
 }
 
@@ -427,9 +496,7 @@ async function connectPresence() {
 // ─── Presence UI ──────────────────────────────────────────────────────────────
 
 function updatePresenceUi() {
-  const count = state.guardians.length
-  const el    = document.querySelector('#guardian-count')
-  if (el) el.textContent = `${count} Guardian${count === 1 ? '' : 's'} in Orbit`
+  renderGuardianCount()
   renderClassCounts()
   drawShips()
 }
@@ -465,7 +532,7 @@ function drawShips() {
     .sort((a, b) => (a.joinedAt ?? 0) - (b.joinedAt ?? 0))
     .slice(0, maxShips)
 
-  const myShip = state.uploadedShipUrl || SHIP_VARIANTS[state.shipVariant]
+  const myShip = state.uploadedShipUrl || '/assets/ship-0.png'
 
   // Indices available for other ships — excludes my own variant
   const availableVariants = SHIP_VARIANTS
@@ -502,24 +569,78 @@ function drawShips() {
   `
 }
 
+// ─── D2 Live Players ──────────────────────────────────────────────────────────
+
+async function fetchD2Players() {
+  try {
+    const res  = await fetch('/api/d2-players')
+    if (!res.ok) throw new Error('non-ok response')
+    const data = await res.json()
+    state.d2Players = data.players ?? null
+  } catch (_) {
+    state.d2Players = null
+  }
+  renderD2Players()
+  // Refresh every 5 minutes
+  setTimeout(fetchD2Players, 5 * 60 * 1000)
+}
+
+function renderD2Players() {
+  renderGuardianCount()
+}
+
+function renderGuardianCount() {
+  const el   = document.querySelector('#guardian-count')
+  if (!el) return
+
+  const site = state.guardians.length
+  const game = state.d2Players
+
+  if (game === null) {
+    el.textContent = `${site.toLocaleString()} Guardian${site === 1 ? '' : 's'} in Orbit`
+    return
+  }
+
+  el.textContent = `${game.toLocaleString()} + ${site.toLocaleString()} Guardians in Orbit`
+}
+
 // ─── Audio ────────────────────────────────────────────────────────────────────
 
 function tryPlayMusic() {
-  const audio = document.querySelector('#bgm')
-  if (!audio) return
-  audio.volume = 0.36
-  audio.play().catch(() => {
-    const btn = document.querySelector('#sound-button')
-    if (btn) btn.textContent = 'Sound: Tap to Play'
-  })
+  selectTrack(state.musicTrack)
 }
 
-function toggleMusic() {
+function selectTrack(track) {
   const audio = document.querySelector('#bgm')
-  const btn   = document.querySelector('#sound-button')
-  if (!audio || !btn) return
-  if (audio.paused) { audio.play();  btn.textContent = 'Sound: On'  }
-  else              { audio.pause(); btn.textContent = 'Sound: Off' }
+  if (!audio) return
+
+  state.musicTrack = track
+
+  // Update active button UI
+  document.querySelectorAll('.sound-opt').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.track === track)
+  })
+
+  if (track === 'off') {
+    audio.pause()
+    return
+  }
+
+  const src = track === 'lullaby' ? '/assets/lullaby.mp3' : '/assets/orbit.mp3'
+  const nextSrc = new URL(src, location.href).href
+
+  audio.volume = 0.36
+
+  if (audio.src !== nextSrc) {
+    // Different track — swap and play from start
+    audio.pause()
+    audio.src = src
+    audio.load()
+    audio.play().catch(() => {})
+  } else if (audio.paused) {
+    // Same track, just resume
+    audio.play().catch(() => {})
+  }
 }
 
 // ─── Lifecycle ────────────────────────────────────────────────────────────────
