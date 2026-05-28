@@ -768,7 +768,7 @@ function renderGhostProfile(player, profile) {
 
   if (totalHours > 0) {
     ghostLines.push(
-      `We've shared <strong>${totalHours.toLocaleString()} hours</strong> together across the stars.`
+      `We've shared <strong>${totalHours.toLocaleString()} hours</strong> together.`
     )
   }
 
@@ -778,11 +778,11 @@ function renderGhostProfile(player, profile) {
     } else if (lastSeen === 'yesterday') {
       ghostLines.push(`It's been a day since I last saw you. I noticed.`)
     } else {
-      ghostLines.push(`It's been <strong>${lastSeen}</strong> since I last saw you. I miss you, Guardian.`)
+      ghostLines.push(`It's been <strong>${lastSeen}</strong> since I last saw you. <br/>I miss you, Guardian.`)
     }
   }
 
-  ghostLines.push(`Will we meet again on <strong>June 9th</strong>?`)
+  ghostLines.push(`<strong>Will we meet again on June 9th</strong>?`)
 
   // ── Detail lines ───────────────────────────────────────────────────────────
   const detailLines = [
