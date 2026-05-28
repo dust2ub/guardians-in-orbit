@@ -397,14 +397,14 @@ h1 {
 .my-ship {
   left: 42%;
   top: 58%;
-  width: clamp(350px, 60vw, 620px);
+  width: clamp(300px, 60vw, 600px);
   transform: translate(-50%, -50%);
   z-index: 4;
   animation: enterOrbit 3.4s cubic-bezier(.18,.89,.26,1.02) both, idleFloat 7s ease-in-out 3.4s infinite;
 }
 
 .other-ship {
-  width: clamp(200px, 40vw, 300px);
+  width: clamp(150px, 30vw, 300px);
   opacity: 0.8;
   z-index: 2;
   animation: otherEnter 4s ease-out both, idleFloat 8s ease-in-out 4s infinite;
@@ -862,4 +862,218 @@ h1 {
 .ship-guide-text strong {
   color: rgba(244, 247, 255, 0.85);
   font-weight: 600;
+}
+
+/* ── Ghost Button ──────────────────────────────────────────── */
+ 
+.ghost-icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+ 
+/* ── Ghost Panel ───────────────────────────────────────────── */
+ 
+.ghost-panel {
+  position: absolute;
+  z-index: 20;
+  top: 50%;
+  left: 50%;
+  transform: translateX(-50%) translateY(0px) scale(0.97);
+  width: 340px;
+  background: rgba(4, 10, 28, 0.88);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(174, 189, 253, 0.18);
+  border-radius: 20px;
+  padding: 18px 20px 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+  opacity: 0;
+  transform: translateX(-50%) translateY(12px) scale(0.97);
+  pointer-events: none;
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+ 
+.ghost-panel.open {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0px) scale(1);
+  pointer-events: auto;
+}
+ 
+.ghost-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+ 
+.ghost-panel-title {
+  font-size: 0.72rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #aebdfd;
+  font-weight: 600;
+}
+ 
+.ghost-search-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+ 
+.ghost-input {
+  flex: 1;
+}
+ 
+.ghost-search-btn {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+ 
+/* Ghost body */
+ 
+.ghost-body {
+  min-height: 40px;
+}
+ 
+.ghost-hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(174, 189, 253, 0.5);
+  font-style: italic;
+  line-height: 1.5;
+}
+ 
+.ghost-loading {
+  color: rgba(174, 189, 253, 0.7);
+  animation: ghostPulse 1.2s ease-in-out infinite;
+}
+ 
+@keyframes ghostPulse {
+  0%, 100% { opacity: 0.7; }
+  50%       { opacity: 0.35; }
+}
+ 
+.ghost-err {
+  color: rgba(255, 120, 100, 0.8);
+  font-style: normal;
+}
+ 
+/* Ghost speech lines */
+ 
+.ghost-speech {
+  margin-bottom: 12px;
+}
+ 
+.ghost-line {
+  margin: 0 0 6px;
+  font-size: 0.84rem;
+  color: rgba(244, 247, 255, 0.75);
+  line-height: 1.5;
+}
+ 
+.ghost-line strong {
+  color: #f0f4ff;
+  font-weight: 600;
+}
+ 
+.ghost-line:last-child { margin-bottom: 0; }
+ 
+/* Character breakdown list */
+ 
+.ghost-char-list {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  padding-top: 10px;
+}
+ 
+.ghost-char-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 5px 6px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+}
+ 
+.ghost-char-class {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: rgba(174, 189, 253, 0.85);
+  letter-spacing: 0.04em;
+  min-width: 56px;
+}
+ 
+.ghost-char-meta {
+  font-size: 0.74rem;
+  color: rgba(244, 247, 255, 0.45);
+  text-align: right;
+}
+ 
+@media (max-width: 720px) {
+  .ghost-panel {
+    left: 50%;
+    top: 46%;
+    width: calc(100vw - 32px);
+    max-width: 340px;
+  }
+}
+ 
+/* ── Clock Greeting Row ────────────────────────────────────── */
+ 
+.clock-greeting-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 6px;
+  pointer-events: auto;
+}
+ 
+.clock-greeting-row .clock-greeting {
+  margin-top: 0;
+}
+ 
+.ghost-inline-btn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: rgba(174, 189, 253, 0.72);
+
+  transition:
+    transform 0.15s ease,
+    opacity 0.15s ease,
+    filter 0.15s ease;
+
+  opacity: 0.72;
+  flex-shrink: 0;
+}
+
+.ghost-inline-btn:hover {
+  opacity: 1;
+  transform: translateY(-1px) scale(1.06);
+  filter: drop-shadow(0 0 8px rgba(174, 189, 253, 0.45));
+}
+
+.ghost-inline-btn:active {
+  transform: scale(0.96);
+}
+
+.ghost-inline-btn svg,
+.ghost-inline-btn img {
+  width: 18px;
+  height: 18px;
+  display: block;
 }

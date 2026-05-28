@@ -1,6 +1,15 @@
 import { createClient } from '@supabase/supabase-js'
 import './styles.css'
 
+// ─── Service Worker ───────────────────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker
+      .register('/sw.js')
+      .catch(err => console.warn('[SW] Registration failed:', err))
+  })
+}
+
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
 const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
 
@@ -58,6 +67,7 @@ const state = {
   guardians: [],
   quests: loadQuests(),
   questPanelOpen: false,
+  ghostPanelOpen: false,
   clockInterval: null,
   musicTrack: 'lullaby',  // 'lullaby' | 'orbit' | 'off'
   d2Players: null
@@ -258,7 +268,17 @@ function renderOrbit() {
       <div class="clock-block">
         <div class="clock-time" id="clock-time">--:--</div>
         <div class="clock-date" id="clock-date"></div>
-        <div class="clock-greeting" id="clock-greeting"></div>
+        <div class="clock-greeting-row">
+          <div class="clock-greeting" id="clock-greeting"></div>
+          <button
+            id="ghost-toggle"
+            class="ghost-inline-btn"
+            aria-label="Toggle Ghost panel"
+            aria-expanded="false"
+          >
+          <img width=30px src="/assets/ghost.webp" />
+          </button>
+        </div>
       </div>
 
       <section id="ship-layer" class="ship-layer" aria-label="Guardians in orbit"></section>
@@ -288,6 +308,28 @@ function renderOrbit() {
         </div>
       </aside>
 
+      <!-- Ghost Panel -->
+      <aside class="ghost-panel" id="ghost-panel" aria-hidden="true">
+        <div class="ghost-panel-header">
+          <span class="ghost-panel-title">👻 Ghost</span>
+          <button class="quest-close-btn" id="ghost-close-btn" aria-label="Close Ghost panel">&times;</button>
+        </div>
+        <div class="ghost-search-row">
+          <input
+            class="quest-input ghost-input"
+            id="ghost-input"
+            type="text"
+            placeholder="Guardian#1234"
+            maxlength="40"
+            aria-label="Bungie display name"
+          />
+          <button class="quest-add-btn ghost-search-btn" id="ghost-search-btn">Scan</button>
+        </div>
+        <div class="ghost-body" id="ghost-body">
+          <p class="ghost-hint">Enter your Bungie name to summon your Ghost.</p>
+        </div>
+      </aside>
+
       <audio id="bgm" loop preload="auto"></audio>
 
       <footer class="orbit-footer">
@@ -299,25 +341,28 @@ function renderOrbit() {
   document.querySelector('#quest-toggle').addEventListener('click', openQuestPanel)
   document.querySelector('#quest-close-btn').addEventListener('click', closeQuestPanel)
   document.querySelector('#quest-add-btn').addEventListener('click', addQuest)
-  document.querySelector('#quest-panel').addEventListener('click', e => {
-  e.stopPropagation()
-  })
-  const questInput = document.querySelector('#quest-input')
+  document.querySelector('#quest-panel').addEventListener('click', e => e.stopPropagation())
 
+  document.querySelector('#ghost-toggle').addEventListener('click', toggleGhostPanel)
+  document.querySelector('#ghost-close-btn').addEventListener('click', closeGhostPanel)
+  document.querySelector('#ghost-panel').addEventListener('click', e => e.stopPropagation())
+  document.querySelector('#ghost-search-btn').addEventListener('click', searchGuardian)
+  document.querySelector('#ghost-input').addEventListener('keydown', e => {
+    if (e.key !== 'Enter' || e.isComposing) return
+    e.preventDefault()
+    searchGuardian()
+  })
+
+  const questInput = document.querySelector('#quest-input')
   questInput.addEventListener('keydown', e => {
     if (e.key !== 'Enter') return
-
-    // Korean/Japanese/Chinese IME composition guard
     if (e.isComposing || e.keyCode === 229) return
-
     e.preventDefault()
     addQuest()
   })
 
   document.querySelectorAll('.sound-opt').forEach(btn => {
-    btn.addEventListener('click', () => {
-      selectTrack(btn.dataset.track)
-    })
+    btn.addEventListener('click', () => selectTrack(btn.dataset.track))
   })
 
   document.querySelector('.orbit').addEventListener('click', e => {
@@ -326,6 +371,17 @@ function renderOrbit() {
     if (state.questPanelOpen && !panel.contains(e.target) && !toggle.contains(e.target)) {
       closeQuestPanel()
     }
+    const ghostPanel  = document.querySelector('#ghost-panel')
+    const ghostToggle = document.querySelector('#ghost-toggle')
+    if (state.ghostPanelOpen && !ghostPanel.contains(e.target) && !ghostToggle.contains(e.target)) {
+      closeGhostPanel()
+    }
+  })
+
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return
+    if (state.questPanelOpen) closeQuestPanel()
+    if (state.ghostPanelOpen) closeGhostPanel()
   })
 
   startClock()
@@ -390,7 +446,6 @@ function addQuest() {
   if (!val) return
   state.quests.push({ id: crypto.randomUUID(), text: val, done: false })
   input.value = ''
-
   saveQuests()
   renderQuestPanel()
   input.focus()
@@ -534,29 +589,22 @@ function drawShips() {
 
   const myShip = state.uploadedShipUrl || '/assets/ship-0.png'
 
-  // Indices available for other ships — excludes my own variant
   const availableVariants = SHIP_VARIANTS
     .map((_, i) => i)
     .filter(i => i !== state.shipVariant)
 
-  // Track assigned indices to avoid same ship appearing twice on screen
   const assigned = new Set([state.shipVariant])
 
   layer.innerHTML = `
     <img class="ship my-ship" src="${myShip}" alt="Your jumpship" />
     ${others.map((guardian, index) => {
-      // Try to use the guardian's own declared variant
       let variant = (guardian.shipVariant ?? index) % SHIP_VARIANTS.length
-
-      // If it's already on screen, pick the next available one
       if (assigned.has(variant)) {
         const fallback = availableVariants.find(v => !assigned.has(v))
         if (fallback !== undefined) variant = fallback
       }
-
       assigned.add(variant)
       const delay = Math.round((guardian.seed ?? Math.random()) * 6000)
-
       return `
         <img
           class="ship other-ship ship-${index}"
@@ -581,7 +629,6 @@ async function fetchD2Players() {
     state.d2Players = null
   }
   renderD2Players()
-  // Refresh every 5 minutes
   setTimeout(fetchD2Players, 5 * 60 * 1000)
 }
 
@@ -590,7 +637,7 @@ function renderD2Players() {
 }
 
 function renderGuardianCount() {
-  const el   = document.querySelector('#guardian-count')
+  const el = document.querySelector('#guardian-count')
   if (!el) return
 
   const site = state.guardians.length
@@ -602,6 +649,133 @@ function renderGuardianCount() {
   }
 
   el.textContent = `${game.toLocaleString()} + ${site.toLocaleString()} Guardians in Orbit`
+}
+
+// ─── Ghost Panel ──────────────────────────────────────────────────────────────
+
+function toggleGhostPanel() {
+  if (state.ghostPanelOpen) closeGhostPanel()
+  else openGhostPanel()
+}
+
+function openGhostPanel() {
+  state.ghostPanelOpen = true
+  if (state.questPanelOpen) closeQuestPanel()
+  const panel = document.querySelector('#ghost-panel')
+  panel.classList.add('open')
+  panel.setAttribute('aria-hidden', 'false')
+  document.querySelector('#ghost-toggle').setAttribute('aria-expanded', 'true')
+  document.querySelector('#ghost-input')?.focus()
+}
+
+function closeGhostPanel() {
+  state.ghostPanelOpen = false
+  const panel = document.querySelector('#ghost-panel')
+  panel.classList.remove('open')
+  panel.setAttribute('aria-hidden', 'true')
+  document.querySelector('#ghost-toggle')?.setAttribute('aria-expanded', 'false')
+}
+
+async function searchGuardian() {
+  const input = document.querySelector('#ghost-input')
+  const body  = document.querySelector('#ghost-body')
+  const btn   = document.querySelector('#ghost-search-btn')
+  if (!input || !body) return
+
+  const name = input.value.trim()
+  if (!name) return
+
+  body.innerHTML = '<p class="ghost-hint ghost-loading">Scanning for Guardian…</p>'
+  btn.disabled = true
+
+  try {
+    const searchRes  = await fetch(`/api/bungie-search?name=${encodeURIComponent(name)}`)
+    const searchData = await searchRes.json()
+
+    if (!searchData.results?.length) {
+      body.innerHTML = '<p class="ghost-hint ghost-err">Guardian not found. Check your Bungie name (e.g. Name#1234).</p>'
+      return
+    }
+
+    const player = searchData.results[0]
+    body.innerHTML = '<p class="ghost-hint ghost-loading">Downloading your record…</p>'
+
+    const profileRes = await fetch(
+      `/api/bungie-profile?membershipId=${player.membershipId}&membershipType=${player.membershipType}`
+    )
+    const profile = await profileRes.json()
+
+    if (profile.error) {
+      body.innerHTML = `<p class="ghost-hint ghost-err">Failed to load profile: ${escapeHtml(profile.error)}</p>`
+      return
+    }
+
+    renderGhostProfile(player, profile)
+  } catch (err) {
+    body.innerHTML = '<p class="ghost-hint ghost-err">Connection lost, Guardian. Try again.</p>'
+    console.error('[Ghost]', err)
+  } finally {
+    btn.disabled = false
+  }
+}
+
+function renderGhostProfile(player, profile) {
+  const body = document.querySelector('#ghost-body')
+  if (!body) return
+
+  function fmtTime(minutes) {
+    if (!minutes) return '0h'
+    const h = Math.floor(minutes / 60)
+    const m = minutes % 60
+    if (h === 0) return `${m}m`
+    if (m === 0) return `${h}h`
+    return `${h}h ${m}m`
+  }
+
+  function fmtDate(iso) {
+    if (!iso) return 'Unknown'
+    const d = new Date(iso)
+    const diffDays = Math.floor((Date.now() - d) / 86400000)
+    if (diffDays === 0) return 'Today'
+    if (diffDays === 1) return 'Yesterday'
+    if (diffDays < 7)   return `${diffDays} days ago`
+    if (diffDays < 30)  return `${Math.floor(diffDays / 7)}w ago`
+    if (diffDays < 365) return `${Math.floor(diffDays / 30)}mo ago`
+    return `${Math.floor(diffDays / 365)}y ago`
+  }
+
+  const displayName = `${player.displayName}#${player.displayCode ?? '????'}`
+  const topChar     = profile.characters?.sort((a, b) => b.light - a.light)[0]
+
+  const lines = [
+    `Found you, <strong>${escapeHtml(displayName)}</strong>.`,
+    `Last seen: <strong>${fmtDate(profile.dateLastPlayed)}</strong>.`,
+    `Total field time: <strong>${fmtTime(profile.totalMinutes)}</strong>.`,
+  ]
+
+  if (topChar) {
+    lines.push(`Highest-power ${topChar.class}: <strong>${topChar.light} Power</strong>.`)
+  }
+  if (profile.triumphScore) {
+    lines.push(`Triumph Score: <strong>${profile.triumphScore.toLocaleString()}</strong>.`)
+  }
+  if (profile.clan) {
+    lines.push(`Clan: <strong>${escapeHtml(profile.clan.name)}</strong>${profile.clan.motto ? ` — "${escapeHtml(profile.clan.motto)}"` : ''}.`)
+  }
+
+  const charLines = (profile.characters || []).map(c => `
+    <li class="ghost-char-item">
+      <span class="ghost-char-class">${c.class}</span>
+      <span class="ghost-char-meta">${c.race} · ${c.light}⚡ · ${fmtTime(c.minutesPlayed)}</span>
+    </li>
+  `).join('')
+
+  body.innerHTML = `
+    <div class="ghost-speech">
+      ${lines.map(l => `<p class="ghost-line">${l}</p>`).join('')}
+    </div>
+    ${charLines ? `<ul class="ghost-char-list">${charLines}</ul>` : ''}
+  `
 }
 
 // ─── Audio ────────────────────────────────────────────────────────────────────
@@ -616,7 +790,6 @@ function selectTrack(track) {
 
   state.musicTrack = track
 
-  // Update active button UI
   document.querySelectorAll('.sound-opt').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.track === track)
   })
@@ -626,19 +799,17 @@ function selectTrack(track) {
     return
   }
 
-  const src = track === 'lullaby' ? '/assets/lullaby.mp3' : '/assets/orbit.mp3'
+  const src     = track === 'lullaby' ? '/assets/lullaby.mp3' : '/assets/orbit.mp3'
   const nextSrc = new URL(src, location.href).href
 
   audio.volume = 0.36
 
   if (audio.src !== nextSrc) {
-    // Different track — swap and play from start
     audio.pause()
     audio.src = src
     audio.load()
     audio.play().catch(() => {})
   } else if (audio.paused) {
-    // Same track, just resume
     audio.play().catch(() => {})
   }
 }
