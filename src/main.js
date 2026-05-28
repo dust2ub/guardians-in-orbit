@@ -276,7 +276,7 @@ function renderOrbit() {
             aria-label="Toggle Ghost panel"
             aria-expanded="false"
           >
-          <img width=30px src="/assets/ghost.webp" />
+          <img src="/assets/ghost.webp" />
           </button>
         </div>
       </div>
@@ -707,6 +707,16 @@ async function searchGuardian() {
     const profileRes = await fetch(profileUrl)
     const profile    = await profileRes.json()
 
+
+    const player = searchData.results[0]
+    console.log('[Ghost] player:', player) // bungieNetMembershipId 있는지 확인
+
+    // ...
+
+    const profile = await profileRes.json()
+    console.log('[Ghost] profile:', profile)
+
+    
     if (profile.error) {
       body.innerHTML = `<p class="ghost-hint ghost-err">Failed to load profile: ${escapeHtml(profile.error)}</p>`
       return
@@ -776,7 +786,7 @@ function renderGhostProfile(player, profile) {
     if (lastSeen === 'today') {
       ghostLines.push(`I saw you <strong>today</strong>. Don't stray too far.`)
     } else if (lastSeen === 'yesterday') {
-      ghostLines.push(`It's been a day since I last saw you. I noticed.`)
+      ghostLines.push(`It's been a day since I last saw you. `)
     } else {
       ghostLines.push(`It's been <strong>${lastSeen}</strong> since I last saw you. <br/>I miss you, Guardian.`)
     }

@@ -895,7 +895,7 @@ h1 {
  
 .ghost-panel.open {
   opacity: 1;
-  transform: translateX(-50%) translateY(0px) scale(1);
+  transform: translateX(-50%) translateY(-30%) scale(1);
   pointer-events: auto;
 }
  
