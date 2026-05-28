@@ -698,6 +698,7 @@ async function searchGuardian() {
     }
 
     const player = searchData.results[0]
+    console.log('[Ghost] player:', player)
     body.innerHTML = '<p class="ghost-hint ghost-loading">Downloading your record…</p>'
 
     // ← bungieNetMembershipId를 쿼리에 추가
@@ -706,17 +707,8 @@ async function searchGuardian() {
 
     const profileRes = await fetch(profileUrl)
     const profile    = await profileRes.json()
-
-
-    const player = searchData.results[0]
-    console.log('[Ghost] player:', player) // bungieNetMembershipId 있는지 확인
-
-    // ...
-
-    const profile = await profileRes.json()
     console.log('[Ghost] profile:', profile)
 
-    
     if (profile.error) {
       body.innerHTML = `<p class="ghost-hint ghost-err">Failed to load profile: ${escapeHtml(profile.error)}</p>`
       return
@@ -792,7 +784,7 @@ function renderGhostProfile(player, profile) {
     }
   }
 
-  ghostLines.push(`<strong>Will we meet again on June 9th</strong>?`)
+  ghostLines.push(`<strong>Will we meet again on June 9th?</strong>`)
 
   // ── Detail lines ───────────────────────────────────────────────────────────
   const detailLines = [
