@@ -47,21 +47,16 @@ export default async function handler(req, res) {
             { headers: { 'X-API-Key': apiKey } }
           )
           const membershipsData = await membershipsRes.json()
-
-          console.log('[bungie-search] status:', membershipsRes.status)
-          console.log('[bungie-search] raw:', JSON.stringify(membershipsData, null, 2))
-          console.log('[bungie-search] membershipsData:', JSON.stringify(membershipsData.Response, null, 2))
-          
           bungieNetMembershipId =
             membershipsData.Response?.bungieNetUser?.membershipId ?? null
-        } catch (err) {                                  // ← _ → err 로 변경
-            console.error('[bungie-search] GetMembershipsById failed:', err)
+        } catch (_) {
+          // non-fatal: firstAccess will just be null
         }
 
         return {
           membershipId:          p.membershipId,
           membershipType:        p.membershipType,
-          bungieNetMembershipId, // ← needed for GetBungieNetUserById
+          bungieNetMembershipId: p.membershipId,
           displayName:           p.bungieGlobalDisplayName,
           displayCode:           p.bungieGlobalDisplayNameCode,
           iconPath:              p.iconPath,
