@@ -311,7 +311,7 @@ function renderOrbit() {
       <!-- Ghost Panel -->
       <aside class="ghost-panel" id="ghost-panel" aria-hidden="true">
         <div class="ghost-panel-header">
-          <span class="ghost-panel-title">👻 Ghost</span>
+          <span class="ghost-panel-title">Ghost</span>
           <button class="quest-close-btn" id="ghost-close-btn" aria-label="Close Ghost panel">&times;</button>
         </div>
         <div class="ghost-search-row">
