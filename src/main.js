@@ -700,10 +700,12 @@ async function searchGuardian() {
     const player = searchData.results[0]
     body.innerHTML = '<p class="ghost-hint ghost-loading">Downloading your record…</p>'
 
-    const profileRes = await fetch(
-      `/api/bungie-profile?membershipId=${player.membershipId}&membershipType=${player.membershipType}`
-    )
-    const profile = await profileRes.json()
+    // ← bungieNetMembershipId를 쿼리에 추가
+    const profileUrl = `/api/bungie-profile?membershipId=${player.membershipId}&membershipType=${player.membershipType}` +
+      (player.bungieNetMembershipId ? `&bungieNetMembershipId=${player.bungieNetMembershipId}` : '')
+
+    const profileRes = await fetch(profileUrl)
+    const profile    = await profileRes.json()
 
     if (profile.error) {
       body.innerHTML = `<p class="ghost-hint ghost-err">Failed to load profile: ${escapeHtml(profile.error)}</p>`
@@ -732,35 +734,73 @@ function renderGhostProfile(player, profile) {
     return `${h}h ${m}m`
   }
 
-  function fmtDate(iso) {
+  function fmtDateRelative(iso) {
     if (!iso) return 'Unknown'
     const d = new Date(iso)
     const diffDays = Math.floor((Date.now() - d) / 86400000)
-    if (diffDays === 0) return 'Today'
-    if (diffDays === 1) return 'Yesterday'
+    if (diffDays === 0) return 'today'
+    if (diffDays === 1) return 'yesterday'
     if (diffDays < 7)   return `${diffDays} days ago`
     if (diffDays < 30)  return `${Math.floor(diffDays / 7)}w ago`
     if (diffDays < 365) return `${Math.floor(diffDays / 30)}mo ago`
     return `${Math.floor(diffDays / 365)}y ago`
   }
 
+  function fmtDateLong(iso) {
+    if (!iso) return null
+    return new Date(iso).toLocaleDateString('en-US', {
+      year: 'numeric', month: 'long', day: 'numeric'
+    })
+  }
+
   const displayName = `${player.displayName}#${player.displayCode ?? '????'}`
   const topChar     = profile.characters?.sort((a, b) => b.light - a.light)[0]
+  const totalHours  = Math.floor((profile.totalMinutes || 0) / 60)
+  const lastSeen    = fmtDateRelative(profile.dateLastPlayed)
 
-  const lines = [
+  // ── Ghost poetic lines ─────────────────────────────────────────────────────
+  const ghostLines = []
+
+  const firstSeenStr = fmtDateLong(profile.firstAccess)
+  if (firstSeenStr) {
+    ghostLines.push(`We first met on <strong>${firstSeenStr}</strong>.`)
+  }
+
+  if (totalHours > 0) {
+    ghostLines.push(
+      `We've shared <strong>${totalHours.toLocaleString()} hours</strong> together across the stars.`
+    )
+  }
+
+  if (profile.dateLastPlayed) {
+    if (lastSeen === 'today') {
+      ghostLines.push(`I saw you <strong>today</strong>. Don't stray too far.`)
+    } else if (lastSeen === 'yesterday') {
+      ghostLines.push(`It's been a day since I last saw you. I noticed.`)
+    } else {
+      ghostLines.push(`It's been <strong>${lastSeen}</strong> since I last saw you. I miss you, Guardian.`)
+    }
+  }
+
+  ghostLines.push(`Will we meet again on <strong>June 9th</strong>?`)
+
+  // ── Detail lines ───────────────────────────────────────────────────────────
+  const detailLines = [
     `Found you, <strong>${escapeHtml(displayName)}</strong>.`,
-    `Last seen: <strong>${fmtDate(profile.dateLastPlayed)}</strong>.`,
+    `Last seen: <strong>${fmtDateRelative(profile.dateLastPlayed)}</strong>.`,
     `Total field time: <strong>${fmtTime(profile.totalMinutes)}</strong>.`,
   ]
-
   if (topChar) {
-    lines.push(`Highest-power ${topChar.class}: <strong>${topChar.light} Power</strong>.`)
+    detailLines.push(`Highest-power ${topChar.class}: <strong>${topChar.light} Power</strong>.`)
   }
   if (profile.triumphScore) {
-    lines.push(`Triumph Score: <strong>${profile.triumphScore.toLocaleString()}</strong>.`)
+    detailLines.push(`Triumph Score: <strong>${profile.triumphScore.toLocaleString()}</strong>.`)
   }
   if (profile.clan) {
-    lines.push(`Clan: <strong>${escapeHtml(profile.clan.name)}</strong>${profile.clan.motto ? ` — "${escapeHtml(profile.clan.motto)}"` : ''}.`)
+    detailLines.push(
+      `Clan: <strong>${escapeHtml(profile.clan.name)}</strong>` +
+      (profile.clan.motto ? ` — "${escapeHtml(profile.clan.motto)}"` : '') + `.`
+    )
   }
 
   const charLines = (profile.characters || []).map(c => `
@@ -770,12 +810,30 @@ function renderGhostProfile(player, profile) {
     </li>
   `).join('')
 
-  body.innerHTML = `
-    <div class="ghost-speech">
-      ${lines.map(l => `<p class="ghost-line">${l}</p>`).join('')}
-    </div>
-    ${charLines ? `<ul class="ghost-char-list">${charLines}</ul>` : ''}
-  `
+  // ── Render with toggle ─────────────────────────────────────────────────────
+  let showingDetails = false
+
+  function render() {
+    body.innerHTML = `
+      <div class="ghost-speech">
+        ${(showingDetails ? detailLines : ghostLines)
+          .map(l => `<p class="ghost-line">${l}</p>`).join('')}
+      </div>
+      ${showingDetails && charLines
+        ? `<ul class="ghost-char-list">${charLines}</ul>`
+        : ''}
+      <button class="ghost-details-btn" id="ghost-details-toggle">
+        ${showingDetails ? '← Back' : 'View Details'}
+      </button>
+    `
+    document.querySelector('#ghost-details-toggle')
+      .addEventListener('click', () => {
+        showingDetails = !showingDetails
+        render()
+      })
+  }
+
+  render()
 }
 
 // ─── Audio ────────────────────────────────────────────────────────────────────

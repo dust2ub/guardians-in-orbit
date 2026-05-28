@@ -1,7 +1,4 @@
 // api/bungie-search.js
-// Searches for a Bungie player by display name and returns membershipId + type.
-// Query: ?name=Guardian%231234
-
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Cache-Control', 'no-store')
@@ -13,7 +10,6 @@ export default async function handler(req, res) {
   if (!apiKey) return res.status(500).json({ error: 'BUNGIE_API_KEY not set' })
 
   try {
-    // SearchDestinyPlayerByBungieName — accepts "name#code" format
     const [displayName, displayNameCode] = name.split('#')
     if (!displayName) return res.status(400).json({ error: 'invalid name format' })
 
@@ -38,13 +34,35 @@ export default async function handler(req, res) {
       return res.status(502).json({ error: data.Message || 'Bungie API error' })
     }
 
-    const results = (data.Response || []).map(p => ({
-      membershipId:   p.membershipId,
-      membershipType: p.membershipType,
-      displayName:    p.bungieGlobalDisplayName,
-      displayCode:    p.bungieGlobalDisplayNameCode,
-      iconPath:       p.iconPath,
-    }))
+    // For each result, also fetch the linked Bungie.net membership ID
+    const rawResults = data.Response || []
+
+    const results = await Promise.all(
+      rawResults.map(async p => {
+        let bungieNetMembershipId = null
+
+        try {
+          const membershipsRes = await fetch(
+            `https://www.bungie.net/Platform/User/GetMembershipsById/${p.membershipId}/${p.membershipType}/`,
+            { headers: { 'X-API-Key': apiKey } }
+          )
+          const membershipsData = await membershipsRes.json()
+          bungieNetMembershipId =
+            membershipsData.Response?.bungieNetUser?.membershipId ?? null
+        } catch (_) {
+          // non-fatal: firstAccess will just be null
+        }
+
+        return {
+          membershipId:          p.membershipId,
+          membershipType:        p.membershipType,
+          bungieNetMembershipId, // ← needed for GetBungieNetUserById
+          displayName:           p.bungieGlobalDisplayName,
+          displayCode:           p.bungieGlobalDisplayNameCode,
+          iconPath:              p.iconPath,
+        }
+      })
+    )
 
     res.status(200).json({ results })
   } catch (err) {
