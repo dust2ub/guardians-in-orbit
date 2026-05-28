@@ -48,6 +48,8 @@ export default async function handler(req, res) {
           )
           const membershipsData = await membershipsRes.json()
 
+          console.log('[bungie-search] status:', membershipsRes.status)
+          console.log('[bungie-search] raw:', JSON.stringify(membershipsData, null, 2))
           console.log('[bungie-search] membershipsData:', JSON.stringify(membershipsData.Response, null, 2))
           
           bungieNetMembershipId =
