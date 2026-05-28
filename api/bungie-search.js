@@ -47,6 +47,9 @@ export default async function handler(req, res) {
             { headers: { 'X-API-Key': apiKey } }
           )
           const membershipsData = await membershipsRes.json()
+
+          console.log('[bungie-search] membershipsData:', JSON.stringify(membershipsData.Response, null, 2))
+          
           bungieNetMembershipId =
             membershipsData.Response?.bungieNetUser?.membershipId ?? null
         } catch (_) {
