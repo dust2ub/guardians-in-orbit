@@ -52,9 +52,8 @@ export default async function handler(req, res) {
           
           bungieNetMembershipId =
             membershipsData.Response?.bungieNetUser?.membershipId ?? null
-        } catch (_) {
+        } catch (err) {                                  // ← _ → err 로 변경
             console.error('[bungie-search] GetMembershipsById failed:', err)
-          // non-fatal: firstAccess will just be null
         }
 
         return {
